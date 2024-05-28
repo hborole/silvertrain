@@ -33,14 +33,29 @@ app.get('/suggestions', async (req, res) => {
         },
       },
       {
-        $addFields: {
-          textScore: { $meta: 'searchScore' },
+        $project: {
+          _id: 1,
+          name: 1,
+          state: '$admin1',
+          country: 1,
+          lat: 1,
+          long: 1,
+          fullName: {
+            $cond: {
+              if: { $ifNull: ['$admin1', false] },
+              then: { $concat: ['$name', ', ', '$admin1', ', ', '$country'] },
+              else: { $concat: ['$name', ', ', '$country'] },
+            },
+          },
         },
+      },
+      {
+        $sort: { name: 1, state: 1, country: 1 },
       },
     ]);
 
     if (!lat || !long) {
-      return res.status(200).json({ suggestions: searchResults });
+      return res.status(200).json({ searchResults });
     }
 
     const ids = searchResults.map((doc) => doc._id);
@@ -54,7 +69,23 @@ app.get('/suggestions', async (req, res) => {
       },
     });
 
-    res.status(200).json({ suggestions });
+    const transformedSuggestions = suggestions.map((suggestion) => {
+      const { name, admin1, country, coordinates, lat, long } = suggestion;
+      const fullName = admin1
+        ? `${name}, ${admin1}, ${country}`
+        : `${name}, ${country}`;
+      return {
+        name,
+        state: admin1,
+        country,
+        coordinates,
+        lat,
+        long,
+        fullName,
+      };
+    });
+
+    res.status(200).json({ suggestions: transformedSuggestions });
   } catch (error) {
     console.error('Error during aggregation:', error);
     res.status(500).json({ message: 'Server error' });

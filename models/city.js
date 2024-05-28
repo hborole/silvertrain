@@ -5,6 +5,7 @@ const citySchema = new mongoose.Schema({
   ascii: String,
   lat: Number,
   long: Number,
+  admin1: String,
   feat_class: String,
   feat_code: String,
   country: String,
