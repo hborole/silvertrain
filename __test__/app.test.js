@@ -35,6 +35,11 @@ describe('/suggestions endpoint', () => {
       '/suggestions?q=Abe&lat=40.7128&long=-74.0060'
     );
     expect(response.status).toBe(200);
+    expect(response.body.suggestions).toStrictEqual(
+      response.body.suggestions.sort(
+        (a, b) => a.coordinates.distance - b.coordinates.distance
+      )
+    );
   });
 });
 

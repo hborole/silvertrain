@@ -79,7 +79,7 @@ app.get('/suggestions', async (req, res) => {
         lat,
         long,
         fullName,
-        distance: distance.toFixed(2), // Formatting the distance to two decimal places
+        distance: parseFloat(distance.toFixed(2)),
       };
     });
 
