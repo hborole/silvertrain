@@ -51,30 +51,62 @@ app.get('/suggestions', async (req, res) => {
 
     const ids = searchResults.map((doc) => doc._id);
 
-    const suggestions = await City.find({
-      _id: { $in: ids },
-      coordinates: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [long, lat] },
+    const suggestions = await City.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [parseFloat(long), parseFloat(lat)],
+          },
+          distanceField: 'distance',
+          spherical: true,
+          query: { _id: { $in: ids } },
         },
       },
-    });
+    ]);
 
     const transformedSuggestions = suggestions.map((suggestion) => {
-      const { name, admin1, country, coordinates, lat, long } = suggestion;
+      const { name, admin1, country, coordinates, lat, long, distance } =
+        suggestion;
       const fullName = admin1
         ? `${name}, ${admin1}, ${country}`
         : `${name}, ${country}`;
       return {
         name,
-        state: admin1,
+        admin1,
         country,
         coordinates,
         lat,
         long,
         fullName,
+        distance: distance.toFixed(2), // Formatting the distance to two decimal places
       };
     });
+
+    // const suggestions = await City.find({
+    //   _id: { $in: ids },
+    //   coordinates: {
+    //     $near: {
+    //       $geometry: { type: 'Point', coordinates: [long, lat] },
+    //     },
+    //   },
+    // });
+
+    // const transformedSuggestions = suggestions.map((suggestion) => {
+    //   const { name, admin1, country, coordinates, lat, long } = suggestion;
+    //   const fullName = admin1
+    //     ? `${name}, ${admin1}, ${country}`
+    //     : `${name}, ${country}`;
+    //   return {
+    //     name,
+    //     state: admin1,
+    //     country,
+    //     coordinates,
+    //     lat,
+    //     long,
+    //     fullName,
+    //   };
+    // });
 
     res.status(200).json({ suggestions: transformedSuggestions });
   } catch (error) {
